@@ -2,12 +2,12 @@
   "name": "Van Light Controller",
   "short_name": "Van Lights",
   "description": "P.J Imaginations light controller with Bluetooth connectivity",
-  "start_url": "/index.html",
+  "start_url": "/light-controller/index.html",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#1e3a8a",
   "orientation": "portrait-primary",
-  "scope": "/",
+  "scope": "/light-controller/",
   "icons": [
     {
       "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48cmVjdCB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgcng9Ijg4IiBmaWxsPSIjMGYxNzJhIi8+PHJlY3QgeD0iNzYiIHk9IjIxMiIgd2lkdGg9IjM2MCIgaGVpZ2h0PSIxMjYiIHJ4PSIzOCIgZmlsbD0iI2RjMjYyNiIvPjxyZWN0IHg9Ijc2IiB5PSIyMTIiIHdpZHRoPSIzNjAiIGhlaWdodD0iNTYiIHJ4PSIyNCIgZmlsbD0iI2ZmZjdlZCIvPjxyZWN0IHg9IjExOCIgeT0iMjI2IiB3aWR0aD0iOTYiIGhlaWdodD0iNDAiIHJ4PSIxMCIgZmlsbD0iIzkzYzVmZCIvPjxyZWN0IHg9IjIyOCIgeT0iMjI2IiB3aWR0aD0iOTYiIGhlaWdodD0iNDAiIHJ4PSIxMCIgZmlsbD0iIzkzYzVmZCIvPjxyZWN0IHg9IjMzOCIgeT0iMjI2IiB3aWR0aD0iNTgiIGhlaWdodD0iNDAiIHJ4PSIxMCIgZmlsbD0iIzkzYzVmZCIvPjxjaXJjbGUgY3g9IjE2OCIgY3k9IjM1MCIgcj0iMzYiIGZpbGw9IiMxMTE4MjciLz48Y2lyY2xlIGN4PSIxNjgiIGN5PSIzNTAiIHI9IjE0IiBmaWxsPSIjZDFkNWRiIi8+PGNpcmNsZSBjeD0iMzQ0IiBjeT0iMzUwIiByPSIzNiIgZmlsbD0iIzExMTgyNyIvPjxjaXJjbGUgY3g9IjM0NCIgY3k9IjM1MCIgcj0iMTQiIGZpbGw9IiNkMWQ1ZGIiLz48dGV4dCB4PSIyNTYiIHk9IjMxNCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIzMiIgZm9udC1mYW1pbHk9IlZlcmRhbmEiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiNmZmY3ZWQiPjY3IFZXPC90ZXh0Pjwvc3ZnPg==",
@@ -22,7 +22,10 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
   "screenshots": [
     {
       "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%230f172a' width='540' height='720'/><rect fill='%231e3a8a' width='540' height='80'/><text x='270' y='50' font-size='40' font-weight='bold' fill='white' text-anchor='middle' font-family='Arial'>Van Light Controller</text></svg>",

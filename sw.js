@@ -1,8 +1,9 @@
-const CACHE_NAME = 'van-lights-v1';
+const CACHE_NAME = 'van-lights-v2';
+const BASE = '/light-controller';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json'
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/manifest.json'
 ];
 
 // Install event
@@ -59,7 +60,7 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => {
         // Return cached page if offline
-        return caches.match('/index.html');
+        return caches.match(BASE + '/index.html');
       })
   );
 });
