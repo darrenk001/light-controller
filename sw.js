@@ -3,8 +3,7 @@ const BASE = '/light-controller';
 const urlsToCache = [
   BASE + '/',
   BASE + '/index.html',
-  BASE + '/manifest.json',
-  BASE + '/peace-wagon.svg'
+  BASE + '/manifest.json'
 ];
 
 // Install event
