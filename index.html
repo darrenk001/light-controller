@@ -1,0 +1,2082 @@
+<!--  -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <!-- Suppress browser request for favicon.ico -->
+    <link rel="shortcut icon"type="image/x-icon" href="data:image/x-icon;,">
+    <title>Van Light Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="description" content="P.J Imaginations light controller with Bluetooth connectivity">
+    <meta name="application-name" content="Van Light Controller">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Van Lights">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><text x='96' y='120' font-size='100' text-anchor='middle' font-family='Arial'>💡</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --primary-dark: #1e40af;
+            --accent: #f59e0b;
+            --accent-light: #fbbf24;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f97316;
+            --bg: #0f172a;
+            --bg-secondary: #1e293b;
+            --surface: #334155;
+            --surface-light: #475569;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border: #475569;
+            --ui-label-size: 0.76rem;
+            --ui-value-size: 1rem;
+        }
+
+        html.light-mode {
+            --primary: #1e40af;
+            --primary-light: #2563eb;
+            --primary-dark: #1e3a8a;
+            --accent: #d97706;
+            --accent-light: #f97316;
+            --success: #059669;
+            --danger: #dc2626;
+            --warning: #ea580c;
+            --bg: #ffffff;
+            --bg-secondary: #f8fafc;
+            --surface: #f5f7ff;
+            --surface-light: #eef2ff;
+            --text-primary: #0f172a;
+            --text-secondary: #1e3a8a;
+            --text-tertiary: #334155;
+            --border: #c7d2e5;
+        }
+
+        html, body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1f3a 100%);
+            color: var(--text-primary);
+            height: 100%;
+            min-height: 100vh;
+            transition: background 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html.light-mode body {
+            background: linear-gradient(135deg, var(--bg) 0%, #e0e7ff 100%);
+        }
+
+        html.light-mode .topnav {
+            background: linear-gradient(135deg, var(--bg) 0%, #e0e7ff 100%);
+        }
+
+        html.light-mode .topnav h1 {
+            color: #000;
+        }
+
+        html.light-mode .title-text {
+            background: none;
+            -webkit-background-clip: initial;
+            background-clip: initial;
+            color: #000;
+        }
+
+        .topnav {
+            background: linear-gradient(135deg, var(--bg) 0%, #1a1f3a 100%);
+            padding: 0.4rem 0.65rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .topnav h1 {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 0;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .topnav i {
+            font-size: 2rem;
+            color: var(--accent-light);
+        }
+
+        .theme-toggle {
+            background: rgba(59, 130, 246, 0.2);
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            color: var(--primary-light);
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+            transform: scale(1.05);
+        }
+
+        .theme-toggle:active {
+            transform: scale(0.95);
+        }
+
+        html.light-mode .theme-toggle {
+            background: rgba(30, 58, 138, 0.15);
+            border-color: rgba(30, 58, 138, 0.3);
+            color: var(--primary);
+        }
+
+        html.light-mode .theme-toggle:hover {
+            background: rgba(30, 58, 138, 0.25);
+            border-color: rgba(30, 58, 138, 0.5);
+        }
+
+        .content {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+
+        .card {
+            background: rgba(51, 65, 85, 0.4);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            border-radius: 16px;
+            padding: 1.5rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .card:hover {
+            background: rgba(51, 65, 85, 0.6);
+            border-color: rgba(71, 85, 105, 0.8);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 48px rgba(30, 58, 138, 0.15);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .card-icon {
+            font-size: 1.75rem;
+            color: var(--accent-light);
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(245, 158, 11, 0.1);
+            border-radius: 10px;
+        }
+
+        .card-title {
+        .control-select-inline {
+            width: auto;
+            min-width: 5.5rem;
+            padding: 0.45rem 0.6rem;
+            font-size: var(--ui-label-size);
+        }
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .card-title-spacer {
+            flex: 1;
+        }
+
+        .timers-lock-btn {
+            border: 1px solid rgba(148, 163, 184, 0.35);
+            background: transparent;
+            color: var(--text-secondary);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            line-height: 1;
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timers-lock-btn:hover {
+            border-color: rgba(96, 165, 250, 0.6);
+            color: var(--text-primary);
+            background: transparent;
+        }
+
+        .timers-lock-btn:active {
+            transform: translateY(1px);
+        }
+
+        .timers-lock-btn[data-locked="true"] {
+            border-color: rgba(244, 63, 94, 0.45);
+            background: rgba(127, 29, 29, 0.45);
+            color: #fecaca;
+        }
+
+        .stat-item {
+            margin: 0.55rem 0;
+            padding: 0.45rem 0.55rem;
+            background: rgba(30, 58, 138, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+        }
+
+        .stat-label {
+            font-size: var(--ui-label-size);
+            color: var(--text-tertiary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.35px;
+        }
+
+        .stat-value {
+            font-size: var(--ui-value-size);
+            font-weight: 700;
+            color: var(--accent-light);
+            margin-top: 0.25rem;
+            margin-top: 0;
+            text-align: right;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .switch {
+            margin: 1.5rem 0;
+        }
+
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
+            outline: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .slider::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .slider:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            filter: grayscale(0.35);
+        }
+
+        .button_style {
+            background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            width: 100%;
+        }
+
+        .button_style:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .button_style:active {
+            transform: translateY(0);
+        }
+
+        #connectBleButton {
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(191, 219, 254, 0.55);
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 48%, #1d4ed8 100%);
+            box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.3), 0 10px 28px rgba(37, 99, 235, 0.5);
+            letter-spacing: 0.35px;
+        }
+
+        #connectBleButton::after {
+            content: "";
+            position: absolute;
+            top: -120%;
+            left: -30%;
+            width: 34%;
+            height: 320%;
+            transform: rotate(28deg);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0));
+            pointer-events: none;
+            transition: left 0.45s ease;
+        }
+
+        #connectBleButton:hover {
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.45), 0 14px 34px rgba(37, 99, 235, 0.62);
+        }
+
+        #connectBleButton:hover::after {
+            left: 112%;
+        }
+
+        #connectBleButton:active {
+            transform: translateY(-1px) scale(0.995);
+            box-shadow: 0 0 0 1px rgba(191, 219, 254, 0.3), 0 8px 20px rgba(37, 99, 235, 0.45);
+        }
+
+        .button_style.off {
+            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            box-shadow: 0 4px 15px rgba(107, 114, 128, 0.2);
+        }
+
+        .button_style.on {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
+        }
+
+        #led_power_en {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            margin: 1rem auto;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #led_power_en:focus,
+        #led_power_en:focus-visible {
+            outline: none;
+        }
+
+        #led_power_en::-moz-focus-inner {
+            border: 0;
+        }
+
+        #led_power_en span {
+            font-size: 0.85rem;
+        }
+
+        .power-icon {
+            width: 1.55rem;
+            height: 1.55rem;
+            border: 0.15rem solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+
+        .power-icon::before {
+            content: "";
+            position: absolute;
+            top: -0.33rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0.15rem;
+            height: 0.72rem;
+            background: currentColor;
+            border-radius: 99px;
+        }
+
+        .control-group {
+            margin: 1.5rem 0;
+        }
+
+        .compact-pair-top {
+            margin-bottom: 0.55rem;
+        }
+
+        .compact-pair-bottom {
+            margin-top: 0.3rem;
+        }
+
+        .control-label {
+            font-size: var(--ui-label-size);
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.35px;
+        }
+
+        .control-label-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .control-label-row .control-label {
+            margin-bottom: 0;
+        }
+
+        .value-display {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.6rem;
+            margin: 0.55rem 0;
+            padding: 0.45rem 0.55rem;
+            background: rgba(30, 58, 138, 0.1);
+            border-radius: 8px;
+        }
+
+        .value-display .label {
+            font-size: var(--ui-label-size);
+            color: var(--text-tertiary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.35px;
+        }
+
+        .value-display .value {
+            color: var(--accent-light);
+            font-weight: 700;
+            font-size: var(--ui-value-size);
+            text-align: right;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .control-select {
+            width: 100%;
+            padding: 0.75rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-primary);
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .control-select:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.18);
+        }
+
+        html.light-mode .control-select {
+            background: var(--surface-light);
+        }
+
+        .connection-panel {
+            grid-column: 1 / -1;
+        }
+
+        html.light-mode .card {
+            background: var(--surface);
+            border-color: var(--border);
+            box-shadow: 0 4px 12px rgba(30, 58, 138, 0.08);
+        }
+
+        html.light-mode .card:hover {
+            background: var(--surface-light);
+            box-shadow: 0 8px 20px rgba(30, 58, 138, 0.12);
+        }
+
+        html.light-mode .stat-item {
+            background: var(--surface);
+            border-left-color: var(--primary-light);
+        }
+
+        html.light-mode .value-display {
+            background: var(--surface);
+        }
+
+        @media (max-width: 768px) {
+            html {
+                font-size: 14px;
+            }
+
+            .topnav {
+                padding: 0.3rem 0.55rem;
+            }
+
+            .topnav h1 {
+                font-size: 0.9rem;
+                gap: 0.5rem;
+            }
+
+            .topnav i {
+                font-size: 1.45rem;
+            }
+
+            .theme-toggle {
+                width: 34px;
+                height: 34px;
+                border-radius: 9px;
+                font-size: 1rem;
+            }
+
+            .content {
+                padding: 0.75rem;
+            }
+
+            .card-grid {
+                gap: 0.5rem;
+            }
+
+            .card {
+                border-radius: 12px;
+                padding: 1rem;
+            }
+
+            .card-header {
+                margin-bottom: 1rem;
+                padding-bottom: 0.75rem;
+            }
+
+            .card-title {
+                font-size: 0.82rem;
+            }
+
+            .card-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 1.35rem;
+            }
+
+            .stat-item {
+                margin: 0.4rem 0;
+                padding: 0.4rem 0.45rem;
+            }
+
+            .stat-value,
+            .value-display .value,
+            .control-select {
+                font-size: var(--ui-value-size);
+            }
+
+            .switch,
+            .control-group {
+                margin: 1rem 0;
+            }
+
+            .button_style {
+                padding: 0.6rem 0.9rem;
+                font-size: 0.85rem;
+                border-radius: 8px;
+            }
+
+            #led_power_en {
+                width: 96px;
+                height: 96px;
+                font-size: 0.95rem;
+            }
+
+            .power-icon {
+                width: 1.25rem;
+                height: 1.25rem;
+                border-width: 0.12rem;
+            }
+
+            .power-icon::before {
+                top: -0.28rem;
+                width: 0.12rem;
+                height: 0.58rem;
+            }
+
+            .control-label,
+            .value-display .label {
+                font-size: var(--ui-label-size);
+            }
+
+            .mode-btn {
+                padding: 0.6rem;
+                font-size: 0.82rem;
+            }
+
+            .dropzone-container {
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+
+            .connection-panel {
+                grid-column: auto;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: landscape) {
+            .card-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        form {
+            display: flex;
+            gap: 1em;
+            align-items: center;
+            padding: 0;
+        }
+
+        .collapsible-header {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            width: 100%;
+        }
+
+        .collapse-toggle {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            margin-right: 0.5rem;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--accent-light);
+            font-size: 1.2rem;
+        }
+
+        .collapse-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .collapsible-content {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s;
+            overflow: hidden;
+            opacity: 1;
+            margin-top: 1.5rem;
+        }
+
+        .collapsible-content.collapsed {
+            grid-template-rows: 0fr;
+            opacity: 0;
+            margin-top: 0;
+        }
+
+        .collapsible-inner {
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .dropzone-container {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(59, 130, 246, 0.05);
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .dropzone-container:hover {
+            border-color: var(--primary-light);
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .dropzone-container.over {
+            border-color: var(--accent-light);
+            background: rgba(245, 158, 11, 0.1);
+        }
+
+        .dropzone-container input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dz-content {
+            pointer-events: none;
+        }
+
+        .dz-icon {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .dz-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.25rem;
+        }
+
+        .dz-sub {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            font-size: 0.9rem;
+        }
+
+        .file-info-icon {
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .file-info-name {
+            flex: 1;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+
+        .progress-container {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            color: var(--text-tertiary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(30, 58, 138, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-light));
+            transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 0%;
+        }
+
+        .update-mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: rgba(30, 58, 138, 0.1);
+            padding: 0.5rem;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-tertiary);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mode-btn:hover {
+            color: var(--text-secondary);
+        }
+
+        .mode-btn.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--primary-light);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+        }
+
+        .mode-icon {
+            font-size: 1.1rem;
+        }
+
+        .slider-popup {
+            position: fixed;
+            z-index: 9999;
+            pointer-events: none;
+            padding: 0.28rem 0.5rem;
+            border-radius: 7px;
+            background: rgba(15, 23, 42, 0.95);
+            color: #f8fafc;
+            font-size: 0.8rem;
+            font-weight: 700;
+            line-height: 1;
+            transform: translate(-50%, -130%);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.12s ease;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.35);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .slider-popup.visible {
+            opacity: 1;
+        }
+    </style>
+</head>
+<!--  ---------------------------------------------------------------------------------------------------------
+  BODY
+  --------------------------------------------------------------------------------------------------------- -->
+<body>
+    <div class="topnav">
+        <h1>
+            💡
+            Van Light Controller
+        </h1>
+        <button class="theme-toggle" id="themeToggle" title="Toggle light/dark mode">🌙</button>
+    </div>
+
+    <div class="content">
+        <div class="card-grid">
+            <!-- Connection Status Card -->
+            <div class="card connection-panel">
+                <div class="card-header">
+                    <div class="card-icon">📡</div>
+                    <h2 class="card-title">Connection</h2>
+                </div>
+                <p><button id="connectBleButton" value="Connect Device" class="button_style">🔗 Connect Device</button></p>
+                <div class="stat-item">
+                    <div class="stat-label">Last Update</div>
+                    <div class="stat-value" id="timestamp">--:--:--</div>
+                </div>
+            </div>
+
+            <!-- Light Control Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">☀️</div>
+                    <h2 class="card-title">Light Control</h2>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Power</label>
+                    <button onclick="onButton(this)" id="led_power_en" value="Off" class="button_style off"><span class="power-icon" aria-hidden="true"></span> <span id="led_power_text">Off</span></button>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <label class="control-label">Brightness</label>
+                        <button type="button" id="brightness_lock_toggle" class="timers-lock-btn" data-locked="true" aria-pressed="true" aria-label="Unlock brightness slider" title="Unlock brightness slider" onclick="onToggleBrightnessLock()">🔒</button>
+                    </div>
+                    <input type="range" onchange="onSlider(this)" id="led_brigtness" min="0" max="100" step="1" value="0" class="slider" disabled>
+                    <div class="value-display">
+                        <span class="label">Brightness Level</span>
+                        <span class="value"><span id="led_brigtness_str">0</span>%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Switch Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🎚️</div>
+                    <h2 class="card-title">Switch Status</h2>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Main Switch</div>
+                    <div class="stat-value" id="switch_status">--</div>
+                </div>
+ 
+                <div class="stat-item">
+                    <div class="stat-label">Door Open</div>
+                    <div class="stat-value" id="door_open">--</div>
+                </div>
+
+                <div class="control-group">
+                    <div class="control-label-row">
+                        <label class="control-label">Ignore door open</label>
+                        <select id="door_open_override" class="control-select control-select-inline" onchange="onSelect(this)">
+                            <option value="Off">Off</option>
+                            <option value="On">On</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timers Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🕐</div>
+                    <h2 class="card-title">Timers</h2>
+                    <span class="card-title-spacer"></span>
+                    <button type="button" id="timers_lock_toggle" class="timers-lock-btn" data-locked="true" aria-pressed="true" aria-label="Unlock timer sliders" title="Unlock timer sliders" onclick="onToggleTimersLock()">🔒</button>
+                </div>
+
+                <div class="control-group compact-pair-top">
+                    <label class="control-label">Door Open Timer</label>
+                    <input type="range" onchange="onSlider(this)" id="door_open_timer" min="0" max="60" step="1" value="0" class="slider" disabled>
+                    <div class="value-display">
+                        <span class="label">Duration</span>
+                        <span class="value"><span id="door_open_timer_str">0</span>s</span>
+                    </div>
+                </div>
+
+                <div class="stat-item compact-pair-bottom">
+                    <div class="stat-label">Door Timer Countdown</div>
+                    <div class="stat-value" id="door_time">--</div>
+                </div>
+
+                <div class="control-group compact-pair-top">
+                    <label class="control-label">Main Switch Timer</label>
+                    <input type="range" onchange="onSlider(this)" id="switch_timer" min="0" max="10" step="1" value="0" class="slider" disabled>
+                    <div class="value-display">
+                        <span class="label">Duration</span>
+                        <span class="value"><span id="switch_timer_str">0</span>h</span>
+                    </div>
+                </div>
+
+                <div class="stat-item compact-pair-bottom">
+                    <div class="stat-label">Switch Timer Countdown</div>
+                    <div class="stat-value" id="switch_time">--</div>
+                </div>
+
+                <div class="control-group">
+                    <label class="control-label">Fade Time</label>
+                    <input type="range" onchange="onSlider(this)" id="fade_time" min="0" max="5" step="0.5" value="0" class="slider" disabled>
+                    <div class="value-display">
+                        <span class="label">Duration</span>
+                        <span class="value"><span id="fade_time_str">0</span>s</span>
+                    </div>
+                </div>                
+            </div>
+
+            <!-- Power Status Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚡</div>
+                    <h2 class="card-title">Power Status</h2>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Power Source</div>
+                    <div class="stat-value" id="power_src">--</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Main Voltage</div>
+                    <div class="stat-value" id="main_volts">--</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Aux Voltage</div>
+                    <div class="stat-value" id="aux_volts">--</div>
+                </div>
+            </div>
+
+            <!-- System Info Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">ℹ️</div>
+                    <h2 class="card-title">System Info</h2>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Temperature</div>
+                    <div class="stat-value" id="temp">--</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Uptime</div>
+                    <div class="stat-value" id="uptime">--</div>
+                </div>
+
+                <div class="stat-item">
+                    <div class="stat-label">Firmware Version</div>
+                    <div class="stat-value" id="version">--</div>
+                </div>
+            </div>
+
+            <!-- Update Card -->
+            <div class="card">
+                <div class="collapsible-header" onclick="toggleUpdateCard()">
+                    <span class="collapse-toggle collapsed" id="updateToggle">▼</span>
+                    <div class="card-header" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none; width: calc(100% - 24px);">
+                        <div class="card-icon">📦</div>
+                        <h2 class="card-title">Update</h2>
+                    </div>
+                </div>
+
+                <div class="collapsible-content collapsed" id="updateContent">
+                    <div class="collapsible-inner">
+                        <div class="update-mode-toggle">
+                            <button class="mode-btn active" id="modeFirmware" onclick="setUpdateMode('firmware')">
+                                <span class="mode-icon">🔧</span>
+                                <span>Firmware</span>
+                            </button>
+                            <button class="mode-btn" id="modeFilesystem" onclick="setUpdateMode('filesystem')">
+                                <span class="mode-icon">📁</span>
+                                <span>File System</span>
+                            </button>
+                        </div>
+
+                        <div class="dropzone-container" id="dropzone" ondrop="handleFileDrop(event)" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)">
+                            <input type="file" id="firmwareFile" accept=".bin" onchange="handleFileSelect(event)">
+                            <div class="dz-content">
+                                <div class="dz-icon">⬆️</div>
+                                <div class="dz-title">Upload Firmware</div>
+                                <div class="dz-sub">Drop .bin file or click to select</div>
+                            </div>
+                        </div>
+
+                        <div id="fileInfoContainer" class="file-info" style="display: none;">
+                            <span class="file-info-icon">✓</span>
+                            <span class="file-info-name" id="fileName">--</span>
+                        </div>
+
+                        <div id="progressContainer" class="progress-container" style="display: none;">
+                            <div class="progress-label">
+                                <span id="progressLabel">Uploading...</span>
+                                <span id="progressPercent">0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 0.75rem;">
+                            <button onclick="startFirmwareUpdate()" id="startUpdateBtn" class="button_style" style="width: 100%; margin-bottom: 0;" disabled>📤 Start Update</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+<!--  ---------------------------------------------------------------------------------------------------------
+
+
+
+  --------------------------------------------------------------------------------------------------------- -->
+<script>
+var favIcon = "AAABAAEAEBAAAAEACABoBQAAFgAAACgAAAAQAAAAIAAAAAEACAAAAAAAAAEAAMMOAADDDgAAAAEAAAABAAAtKioANS0mADsuIQAxLzEAMi8wADIvMQA0MzUAHD1GABA/XwAXQF8ACkh1AB5RdgAiQkoAI0NLACRETAAtSE8AJEZQACVHUAAlR1EAIERfACVIUgAqS1MAI0ZhADdQYwBEMx4ASTQaAEs1GgBZORAAWDsWAE87IgBDPzoARUM/AEdDPQBIQz4AVkEnAF5FJQBWXSUAW187AFZhBwBbYiUAXGIyAGtFFABtRhUAZEknAGFIKABlSygAbU8pAG9QKQBuUCoAdVQrAHVVKwB2VSoAd1YsAHlYLgB5WS4AelkuAGFsEABsfAAAZG0lAGZtNQBnbToAZ207AGtzMQBudTkAbnU6AG92OwBEQ0MARUNEAEZVWQBYV1gAW1pcAF1dXABdXV4AUGRzAFVodABebncAY1pQAGRcUABjZlIAaGpVAGlrVQBsb1IAamtbAGBgYgBhYWQAY2JmAGNjZgBkY2YAZGRnAGVkZgBqaWwAa2ptAHV0dAB9fHkAf394AAxioQAMY6IADXG6AG15ggB1hQcAdoYFAHSAHgB4gjAAmWAVALBuGACybxkAsnAZALNwGQCClAYAh5kFAIiaBQCImgcAiZsHAJesAACYrgAAmbAAAIGBewCDg38AhYZ4AKvEAACtxgAAr8gAALDKAACxygAAgoGBAIaGhACHh4QAh4eHAIeIhACIiIQAiIiFAIiIiACOjo4Aj4+PAIyPkACQkI4AkZCPAJqamgCbm5sAnaChAKCfoAChoKAAoaGhAKGlpgCnrK8AqamoAKurqgC1tbUAtra2ALe8vQC4uLgAuLy9ALi+vwC9vb0Avr6+AL+/vwDBwcEAx8fHAMvLzADOzs8A0dHRANLT0wDU1NQA19fXANva2gDZ29wA4+PjAOXl5QDn6OgA7OzsAPj4+AD7+/sA/f39AP7+/gD///8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAArq6urq6urq6urq6urq6urpaJfoOFjY2NjY2JfoOFk52hfAAEQ5OampqcfAAEQpqjTRgEBgEwNjY2Nh0EBgEjTB4bGgIqaGpqaGpnGgIpHB8hLDArMTQ0NDQ0MS4tMSIfR3V+jYd+fn6AfoyHgoJeXChsZFI6bmQmbmRSOm1uOJE+d3JQZXpxOXpyUGV5eGanTic7XlE/PSU/PXRRPyR2rp9bVEVTV1dZV1lIRlRbnq6mRBIHDhQSEhQSDAwVD4auqosISktfXwphC4+YlZiorq6hYqWQExYXCUmprq6urq6urq6uqpGRo4ekrq6urq6urq6urq6urq6urq6urq6urgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+var docHead = document.getElementsByTagName('head')[0];
+var newLink = document.createElement('link');
+newLink.rel = 'shortcut icon';
+newLink.href = 'data:image/png;base64,'+favIcon;
+docHead.appendChild(newLink);
+
+// ---------------------------------------------------------------------------------------------------------
+// Theme Toggle Functionality
+// ---------------------------------------------------------------------------------------------------------
+const themeToggle = document.getElementById('themeToggle');
+const html = document.documentElement;
+
+// Initialize theme from localStorage or system preference
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        html.classList.add('light-mode');
+        themeToggle.innerHTML = '☀️';
+    } else {
+        html.classList.remove('light-mode');
+        themeToggle.innerHTML = '🌙';
+    }
+}
+
+// Toggle theme
+themeToggle.addEventListener('click', () => {
+    const isLightMode = html.classList.toggle('light-mode');
+    localStorage.setItem('theme', isLightMode ? 'light' : 'dark');
+    themeToggle.innerHTML = isLightMode ? '☀️' : '🌙';
+});
+
+// Initialize theme on page load
+initializeTheme();
+
+// ---------------------------------------------------------------------------------------------------------
+// Register Service Worker for offline support and installability
+// ---------------------------------------------------------------------------------------------------------
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then((registration) => {
+                console.log('Service Worker registered:', registration);
+            })
+            .catch((error) => {
+                console.log('Service Worker registration failed:', error);
+            });
+    });
+}
+
+// DOM Elements
+const connectButton = document.getElementById('connectBleButton');
+const powerButton = document.getElementById('led_power_en');
+const timestampContainer = document.getElementById('timestamp');
+
+//Define BLE Device Specs
+var deviceName ='Van Lights';
+var bleService =   "e9f1be08-037d-4b53-8df1-9aba70ece842";
+var outputCharacteristic =    "a7477190-49de-4cce-ba53-597886f0e428";
+var inputCharacteristic =     "767c20bb-294d-46b6-8b6f-1a6b52f9ea4d";
+var otaCharacteristic =       "da18354e-eefd-40b6-adb8-29c333f78121";
+
+//Global Variables to Handle Bluetooth
+var bleServer;
+var bleServiceFound;
+var inputCharacteristicFound;
+var outputCharacteristicFound;
+var otaCharacteristicFound;
+var otaInProgress = false;
+var readInitialValues = true;
+var main_switch = false;
+var door_switch = false;
+
+const defaultStatusState = {
+    text: {},
+    value: {}
+};
+let defaultStatusCaptured = false;
+
+function captureDefaultStatusFields() {
+    if (defaultStatusCaptured) {
+        return;
+    }
+
+    const textIds = [
+        'timestamp',
+        'switch_status',
+        'door_open',
+        'door_time',
+        'switch_time',
+        'power_src',
+        'main_volts',
+        'aux_volts',
+        'temp',
+        'uptime',
+        'version',
+        'led_brigtness_str',
+        'door_open_timer_str',
+        'switch_timer_str',
+        'fade_time_str'
+    ];
+
+    const valueIds = [
+        'led_power_en',
+        'led_brigtness',
+        'door_open_timer',
+        'switch_timer',
+        'fade_time',
+        'door_open_override'
+    ];
+
+    textIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            defaultStatusState.text[id] = el.innerHTML;
+        }
+    });
+
+    valueIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            defaultStatusState.value[id] = el.value;
+        }
+    });
+
+    defaultStatusCaptured = true;
+}
+
+function resetStatusFieldsToDefaults() {
+    if (!defaultStatusCaptured) {
+        captureDefaultStatusFields();
+    }
+
+    Object.keys(defaultStatusState.text).forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.innerHTML = defaultStatusState.text[id];
+        }
+    });
+
+    Object.keys(defaultStatusState.value).forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.value = defaultStatusState.value[id];
+        }
+    });
+
+    main_switch = false;
+    door_switch = false;
+    updatePowerButtonStyle();
+
+    ['led_brigtness', 'door_open_timer', 'switch_timer', 'fade_time'].forEach((id) => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            setSliderVisual(slider, false);
+        }
+    });
+}
+
+// Connect Button (search for BLE Devices only if BLE is available)
+connectButton.addEventListener('click', (event) => {
+    if (isWebBluetoothEnabled()) {
+        connectToDevice();
+    }
+});
+
+// ---------------------------------------------------------------------------------------------------------
+// Check if BLE is available in your Browser
+// ---------------------------------------------------------------------------------------------------------
+function isWebBluetoothEnabled() {
+    if (!navigator.bluetooth) {
+        console.log('Web Bluetooth API is not available in this browser!');
+        updateConnectionStatus(false);
+        return false
+    }
+    console.log('Web Bluetooth API supported in this browser.');
+    return true
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Update Connection Status UI
+// ---------------------------------------------------------------------------------------------------------
+function updateConnectionStatus(connected) {
+    // Connection status badge removed from UI.
+}
+
+function connectToSelectedDevice(device) {
+    console.log('Device Selected:', device.name);
+    updateConnectionStatus(true);
+    device.addEventListener('gattserverdisconnected', onDisconnected);
+    return device.gatt.connect()
+    .then(gattServer => {
+        bleServer = gattServer;
+        console.log("Connected to GATT Server");
+        return bleServer.getPrimaryService(bleService);
+    })
+    .then(service => {
+        bleServiceFound = service;
+        console.log("Service discovered:", service.uuid);
+        return bleServiceFound;
+    })
+    .then(service => {
+        return service.getCharacteristic(otaCharacteristic);
+    })
+    .then(characteristic => {
+        console.log("Characteristic OTA discovered:", characteristic.uuid);
+        otaCharacteristicFound = characteristic;
+        return bleServiceFound;
+    })
+    .then(service => {
+        return service.getCharacteristic(inputCharacteristic);
+    })
+    .then(characteristic => {
+        console.log("Characteristic input discovered:", characteristic.uuid);
+        inputCharacteristicFound = characteristic;
+        characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
+        characteristic.startNotifications();
+        console.log("Notifications Started.");
+        return bleServiceFound;
+    })
+    .then(service => {
+        return service.getCharacteristic(outputCharacteristic);
+    })
+    .then(characteristic => {
+        console.log("Characteristic output discovered:", characteristic.uuid);
+        outputCharacteristicFound = characteristic;
+        readInitialValues = true;
+        return outputCharacteristicFound;
+    });
+}
+
+async function attemptAutoConnectOnLoad() {
+    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) {
+        return;
+    }
+
+    try {
+        const devices = await navigator.bluetooth.getDevices();
+        const rememberedDevice = devices.find((d) => d.name === deviceName) || devices[0];
+        if (!rememberedDevice) {
+            return;
+        }
+
+        setControlsEnabled(true);
+        connectButton.innerHTML = '⛔ Disconnect';
+        console.log('Attempting auto-connect to remembered device:', rememberedDevice.name || '(unnamed)');
+        await connectToSelectedDevice(rememberedDevice);
+    } catch (error) {
+        console.log('Auto-connect failed:', error);
+        updateConnectionStatus(false);
+        connectButton.innerHTML = '🔗 Connect Device';
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Connect to BLE Device and Enable Notifications
+// ---------------------------------------------------------------------------------------------------------
+function connectToDevice() {
+    setControlsEnabled(true);
+    
+    if (connectButton.innerHTML.includes('Disconnect')) {
+        disconnectDevice();
+        console.log("Exitting");
+        return true;
+    } else {
+        connectButton.innerHTML = '⛔ Disconnect';
+        console.log('Initializing Bluetooth...');
+        navigator.bluetooth.requestDevice({
+            filters: [{name: deviceName}],
+            optionalServices: [bleService]
+        })
+        .then(device => connectToSelectedDevice(device))
+        .catch(error => {
+            console.log('Error: ', error);
+            updateConnectionStatus(false);
+            connectButton.innerHTML = '🔗 Connect Device';
+        })
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function disconnectDevice() {
+    console.log("Disconnect Device.");
+    setControlsEnabled(true);
+    if (bleServer && bleServer.connected) {
+        if (inputCharacteristicFound) {
+            inputCharacteristicFound.stopNotifications()
+            .then(() => {
+                console.log("Notifications Stopped");
+                return bleServer.disconnect();
+            })
+            .then(() => {
+                console.log("Device Disconnected");
+                resetStatusFieldsToDefaults();
+                updateConnectionStatus(false);
+                connectButton.innerHTML = '🔗 Connect Device';
+            })
+            .catch(error => {
+                console.log("An error occurred:", error);
+            });
+        } else {
+            console.log("No characteristic found to disconnect.");
+        }
+    } else {
+        // Throw an error if Bluetooth is not connected
+        console.error("Bluetooth is not connected.");
+        window.alert("Bluetooth is not connected.")
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function onDisconnected(event) {
+    console.log('Device Disconnected:', event.target.device);
+    resetStatusFieldsToDefaults();
+    updateConnectionStatus(false);
+    connectButton.innerHTML = '🔗 Connect Device';
+    readInitialValues = true;
+    window.location.reload(true);
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function setSwitchState() {
+    if (main_switch && door_switch) {
+        document.getElementById("switch_status").innerHTML = "Error";
+    } else if (main_switch) {
+        document.getElementById("switch_status").innerHTML = "On";
+    } else if (door_switch) {
+        document.getElementById("switch_status").innerHTML = "Door";
+    } else {
+        document.getElementById("switch_status").innerHTML = "Off";
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleCharacteristicChange(event) {
+    const newValueReceived = new TextDecoder().decode(event.target.value);
+    console.log("Characteristic value changed: ", newValueReceived);
+
+    if (newValueReceived.indexOf("PROGRESS:") >= 0) {
+        var pstr = newValueReceived.split(":")[1];
+        var pdata = pstr.split("/");
+        var perc = (pdata[0]/pdata[1]*100)
+        var s = perc.toFixed(1) + "%";
+        document.getElementById('progressFill').style.width = s;        
+        document.getElementById('progressPercent').innerHTML = s;
+        return;
+    }
+    var myObj = JSON.parse(newValueReceived);
+    var keys = Object.keys(myObj);
+
+    for (var i = 0; i < keys.length; i++) {
+        var key = keys[i];
+
+        if (key == "led_brigtness") {
+            document.getElementById(key).value = myObj[key];
+            document.getElementById("led_brigtness_str").innerHTML = myObj[key];
+        } else if (key == "led_power_en") {
+            document.getElementById(key).value = myObj[key];
+            updatePowerButtonStyle();
+        } else if (key == "door_open_timer") {
+            document.getElementById(key).value = myObj[key];
+            document.getElementById("door_open_timer_str").innerHTML = myObj[key];
+        } else if (key == "switch_timer") {
+            document.getElementById(key).value = myObj[key];
+            document.getElementById("switch_timer_str").innerHTML = myObj[key];
+        } else if (key == "fade_time") {
+            document.getElementById(key).value = myObj[key];
+            document.getElementById("fade_time_str").innerHTML = myObj[key];
+        } else if (key == "door_open_override") {
+            document.getElementById(key).value = myObj[key];
+        } else if (key == "switch_state") {
+            main_switch = (myObj[key] == "On") ? true : false;
+            setSwitchState();
+        } else if (key == "door_switch_state") {
+            door_switch = (myObj[key] == "On") ? true : false;
+            setSwitchState();
+        } else {
+            document.getElementById(key).innerHTML = myObj[key];
+        }
+    }
+
+    // Ensure we get one full update after receiving the first message
+    if (bleServer && bleServer.connected) {
+        let data = document.getElementById("version").innerHTML;
+        if ((outputCharacteristicFound) && ((!data || readInitialValues))) {
+            let encoder = new TextEncoder('utf-8');
+            outputCharacteristicFound.writeValue(encoder.encode("getValues"));
+            readInitialValues = false;
+        }
+    } else {
+        console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+        window.alert("Bluetooth is not connected.\n")
+    }
+
+    timestampContainer.innerHTML = getDateTime();
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Update Power Button Style
+// ---------------------------------------------------------------------------------------------------------
+function updatePowerButtonStyle() {
+    const powerValue = document.getElementById("led_power_en").value;
+    const powerButton = document.getElementById("led_power_en");
+    const powerText = document.getElementById("led_power_text");
+    
+    if (powerValue === "On") {
+        powerButton.classList.remove('off');
+        powerButton.classList.add('on');
+        powerText.textContent = "On";
+    } else {
+        powerButton.classList.remove('on');
+        powerButton.classList.add('off');
+        powerText.textContent = "Off";
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function onButton(element) {
+    element.blur();
+    console.log('onButton' + ':' + element.id);
+    var buttonValue = element.id+":"+document.getElementById(element.id).value;
+    console.log(buttonValue);
+
+    if (bleServer && bleServer.connected) {
+        if (outputCharacteristicFound) {
+            let encoder = new TextEncoder('utf-8');
+            outputCharacteristicFound.writeValue(encoder.encode(buttonValue));
+            console.log("sent:"+buttonValue);
+        }
+    } else {
+        console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+        window.alert("Bluetooth is not connected.\n")
+    }
+}
+
+const TIMER_SLIDER_IDS = ["door_open_timer", "switch_timer", "fade_time"];
+let timersLocked = false;
+let brightnessLocked = false;
+
+function setBrightnessSliderLocked(locked) {
+    brightnessLocked = locked;
+
+    const brightnessSlider = document.getElementById('led_brigtness');
+    if (brightnessSlider) {
+        brightnessSlider.disabled = locked;
+    }
+
+    const lockButton = document.getElementById('brightness_lock_toggle');
+    if (lockButton) {
+        lockButton.textContent = locked ? '🔒' : '🔓';
+        lockButton.dataset.locked = locked ? 'true' : 'false';
+        lockButton.setAttribute('aria-pressed', locked ? 'true' : 'false');
+        lockButton.setAttribute('aria-label', locked ? 'Unlock brightness slider' : 'Lock brightness slider');
+        lockButton.title = locked ? 'Unlock brightness slider' : 'Lock brightness slider';
+    }
+}
+
+function onToggleBrightnessLock() {
+    setBrightnessSliderLocked(!brightnessLocked);
+}
+
+function setTimerSlidersLocked(locked) {
+    timersLocked = locked;
+
+    TIMER_SLIDER_IDS.forEach((id) => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            slider.disabled = locked;
+        }
+    });
+
+    const lockButton = document.getElementById('timers_lock_toggle');
+    if (lockButton) {
+        lockButton.textContent = locked ? '🔒' : '🔓';
+        lockButton.dataset.locked = locked ? 'true' : 'false';
+        lockButton.setAttribute('aria-pressed', locked ? 'true' : 'false');
+        lockButton.setAttribute('aria-label', locked ? 'Unlock timer sliders' : 'Lock timer sliders');
+        lockButton.title = locked ? 'Unlock timer sliders' : 'Lock timer sliders';
+    }
+}
+
+function onToggleTimersLock() {
+    setTimerSlidersLocked(!timersLocked);
+}
+
+let sliderPopupEl;
+let sliderPopupHideTimer;
+
+function ensureSliderPopupElement() {
+    if (!sliderPopupEl) {
+        sliderPopupEl = document.createElement('div');
+        sliderPopupEl.className = 'slider-popup';
+        document.body.appendChild(sliderPopupEl);
+    }
+    return sliderPopupEl;
+}
+
+function positionSliderPopup(slider) {
+    const popup = ensureSliderPopupElement();
+    const rect = slider.getBoundingClientRect();
+    const min = Number(slider.min || 0);
+    const max = Number(slider.max || 100);
+    const value = Number(slider.value || 0);
+    const clampedPercent = max > min ? (value - min) / (max - min) : 0;
+    const thumbPx = 18;
+    const x = rect.left + clampedPercent * (rect.width - thumbPx) + thumbPx / 2;
+    const y = rect.top;
+
+    popup.style.left = `${x}px`;
+    popup.style.top = `${y}px`;
+}
+
+function showSliderPopup(slider) {
+    if (!slider || slider.disabled) {
+        return;
+    }
+
+    if (sliderPopupHideTimer) {
+        clearTimeout(sliderPopupHideTimer);
+        sliderPopupHideTimer = null;
+    }
+
+    const popup = ensureSliderPopupElement();
+    popup.textContent = slider.value;
+    positionSliderPopup(slider);
+    popup.classList.add('visible');
+}
+
+function hideSliderPopup(delayMs = 0) {
+    if (!sliderPopupEl) {
+        return;
+    }
+
+    if (sliderPopupHideTimer) {
+        clearTimeout(sliderPopupHideTimer);
+    }
+
+    sliderPopupHideTimer = setTimeout(() => {
+        sliderPopupEl.classList.remove('visible');
+    }, delayMs);
+}
+
+function initializeSliderPopups() {
+    const sliders = document.querySelectorAll('.slider');
+
+    sliders.forEach((slider) => {
+        slider.addEventListener('input', () => showSliderPopup(slider));
+        slider.addEventListener('pointerdown', () => showSliderPopup(slider));
+        slider.addEventListener('pointerup', () => hideSliderPopup(250));
+        slider.addEventListener('touchstart', () => showSliderPopup(slider), { passive: true });
+        slider.addEventListener('touchend', () => hideSliderPopup(250), { passive: true });
+        slider.addEventListener('blur', () => hideSliderPopup(0));
+    });
+
+    window.addEventListener('resize', () => hideSliderPopup(0));
+    window.addEventListener('scroll', () => hideSliderPopup(0), { passive: true });
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function onSlider(element) {
+    if (element.disabled) {
+        return;
+    }
+
+    console.log('onSlider' + ':' + element.id);
+    if (bleServer && bleServer.connected) {
+        if (outputCharacteristicFound) {
+            console.log("Found the output characteristic: ", outputCharacteristicFound.uuid);
+            let encoder = new TextEncoder('utf-8');
+            var outputValue = "";
+            var sliderValue = document.getElementById(element.id).value;
+            if (element.id == "led_brigtness") {
+                document.getElementById("led_brigtness_str").innerHTML = sliderValue;
+                outputValue = "led_brigtness:"+sliderValue.toString();
+            } if (element.id == "door_open_timer") {
+                document.getElementById("door_open_timer_str").innerHTML = sliderValue;
+                outputValue = "door_open_timer:"+sliderValue.toString();
+            } else if (element.id == "switch_timer") {
+                document.getElementById("switch_timer_str").innerHTML = sliderValue;
+                outputValue = "switch_timer:"+sliderValue.toString();
+            } else if (element.id == "fade_time") {
+                document.getElementById("fade_time_str").innerHTML = sliderValue;
+                outputValue = "fade_time:"+sliderValue.toString();
+            }
+            console.log(outputValue);
+            outputCharacteristicFound.writeValue(encoder.encode(outputValue));
+        }
+    } else {
+        console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+        window.alert("Bluetooth is not connected.\n")
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function onSelect(element) {
+    console.log('onSelect' + ':' + element.id);
+    if (bleServer && bleServer.connected) {
+        if (outputCharacteristicFound) {
+            let encoder = new TextEncoder('utf-8');
+            var selectValue = document.getElementById(element.id).value;
+            var outputValue = element.id + ":" + selectValue;
+            console.log(outputValue);
+            outputCharacteristicFound.writeValue(encoder.encode(outputValue));
+        }
+    } else {
+        console.error ("Bluetooth is not connected. Cannot write to characteristic.")
+        window.alert("Bluetooth is not connected.\n")
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function getDateTime() {
+    var currentdate = new Date();
+    var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
+    var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
+    var year = currentdate.getFullYear();
+    var hours = ("00" + currentdate.getHours()).slice(-2);
+    var minutes = ("00" + currentdate.getMinutes()).slice(-2);
+    var seconds = ("00" + currentdate.getSeconds()).slice(-2);
+
+    var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
+    return datetime;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Firmware Update (OTA) Functionality
+// ---------------------------------------------------------------------------------------------------------
+var selectedFirmwareFile = null;
+var updateMode = 'firmware'; // 'firmware' or 'filesystem'
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function setUpdateMode(mode) {
+    updateMode = mode;
+    document.getElementById('modeFirmware').classList.toggle('active', mode === 'firmware');
+    document.getElementById('modeFilesystem').classList.toggle('active', mode === 'filesystem');
+    
+    // Update dropzone text based on mode
+    if (mode === 'firmware') {
+        document.querySelector('.dz-title').textContent = 'Upload Firmware';
+        document.querySelector('.dz-sub').textContent = 'Drop .bin firmware file or click to select';
+    } else {
+        document.querySelector('.dz-title').textContent = 'Upload File System';
+        document.querySelector('.dz-sub').textContent = 'Drop .bin filesystem image or click to select';
+    }
+    
+    clearFirmwareFile();
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function getUpdateModeLabel() {
+    return updateMode === 'firmware' ? 'Firmware' : 'File System';
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function toggleUpdateCard() {
+    const content = document.getElementById('updateContent');
+    const toggle = document.getElementById('updateToggle');
+    content.classList.toggle('collapsed');
+    toggle.classList.toggle('collapsed');
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleDragOver(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('dropzone').classList.add('over');
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleDragLeave(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('dropzone').classList.remove('over');
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleFileDrop(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    document.getElementById('dropzone').classList.remove('over');
+    
+    const files = event.dataTransfer.files;
+    if (files.length > 0) {
+        handleFileSelected(files[0]);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleFileSelect(event) {
+    if (event.target.files.length > 0) {
+        handleFileSelected(event.target.files[0]);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function handleFileSelected(file) {
+    if (!file.name.endsWith('.bin')) {
+        window.alert('Please select a .bin firmware file');
+        return;
+    }
+    
+    selectedFirmwareFile = file;
+    document.getElementById('fileName').textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+    document.getElementById('fileInfoContainer').style.display = 'flex';
+    document.getElementById('startUpdateBtn').disabled = false;
+    console.log('Firmware file selected:', file.name, file.size, 'bytes');
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function clearFirmwareFile() {
+    selectedFirmwareFile = null;
+    document.getElementById('firmwareFile').value = '';
+    document.getElementById('fileInfoContainer').style.display = 'none';
+    document.getElementById('startUpdateBtn').disabled = true;
+    document.getElementById('progressContainer').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+function setControlsEnabled(enabled) {
+    if (enabled) {
+        document.getElementById('startUpdateBtn').innerHTML = "📤 Start Update";
+        document.getElementById('progressContainer').style.display = 'none';
+    } else {
+        document.getElementById('startUpdateBtn').innerHTML = "⛔ Updating";
+        document.getElementById('progressContainer').style.display = 'flex';
+    }
+    document.getElementById('startUpdateBtn').disabled = !enabled;
+    document.getElementById('fileInfoContainer').disabled = !enabled;        
+    document.getElementById('firmwareFile').disabled = !enabled;
+    document.getElementById('dropzone').disabled = !enabled;
+    document.getElementById('modeFirmware').disabled = !enabled;
+    document.getElementById('modeFilesystem').disabled = !enabled;
+    document.getElementById("led_power_en").disabled = !enabled;
+    document.getElementById("door_open_override").disabled = !enabled;
+
+    if (enabled) {
+        setBrightnessSliderLocked(brightnessLocked);
+        setTimerSlidersLocked(timersLocked);
+    } else {
+        document.getElementById("led_brigtness").disabled = true;
+        for (const sliderId of TIMER_SLIDER_IDS) {
+            const slider = document.getElementById(sliderId);
+            if (slider) {
+                slider.disabled = true;
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+async function probeMTU(char) {
+  const candidates = [512, 256, 128, 64, 32];
+  for (const size of candidates) {
+    try {
+      await char.writeValueWithoutResponse(new Uint8Array(size));
+      return size;
+    } catch {
+      // BLE stack rejected this size — try smaller
+    }
+  }
+  return 16; // absolute minimum
+}
+
+const CRC32_TABLE = (() => {
+    const table = new Uint32Array(256);
+
+    for (let index = 0; index < 256; index += 1) {
+        let value = index;
+        for (let bit = 0; bit < 8; bit += 1) {
+            if ((value & 1) === 1) {
+                value = (value >>> 1) ^ 0xEDB88320;
+            } else {
+                value >>>= 1;
+            }
+        }
+        table[index] = value >>> 0;
+    }
+
+    return table;
+})();
+
+function calculateCrc32(arrayBuffer) {
+    const bytes = new Uint8Array(arrayBuffer);
+    let crc = 0xFFFFFFFF;
+
+    for (let index = 0; index < bytes.length; index += 1) {
+        const tableIndex = (crc ^ bytes[index]) & 0xFF;
+        crc = (crc >>> 8) ^ CRC32_TABLE[tableIndex];
+    }
+
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Perform the OTA transfer: OPEN → SIZE → DATA → DONE
+// ---------------------------------------------------------------------------------------------------------
+async function performOtaTransfer(firmwareArrayBuffer) {
+    // OPEN (with response)
+    const mtuPayload = await probeMTU(otaCharacteristicFound);
+    const firmwareCrc32 = calculateCrc32(firmwareArrayBuffer);
+    console.log("MTU probe payload="+mtuPayload+"B/packet");
+    console.log("Firmware CRC32=0x" + firmwareCrc32.toString(16).toUpperCase().padStart(8, '0'));
+
+    // 'firmware' or 'filesystem'
+    if (updateMode == 'firmware') { 
+        await otaCharacteristicFound.writeValue(new TextEncoder().encode("UPDFW"));
+    } else {
+        await otaCharacteristicFound.writeValue(new TextEncoder().encode("UPDFS"));
+    }
+
+    await otaCharacteristicFound.writeValue(new TextEncoder().encode("CRC"));
+
+    const crcBuf = new ArrayBuffer(4);
+    new DataView(crcBuf).setUint32(0, firmwareCrc32, true);
+    await otaCharacteristicFound.writeValue(new Uint8Array(crcBuf));
+
+    await otaCharacteristicFound.writeValue(new TextEncoder().encode("OPEN"));
+    otaInProgress = true;
+
+    // SIZE (4-byte little-endian, with response)
+    const sizeBuf = new ArrayBuffer(4);
+    new DataView(sizeBuf).setUint32(0, firmwareArrayBuffer.byteLength, true);
+    await otaCharacteristicFound.writeValue(new Uint8Array(sizeBuf));
+
+    // DATA (chunked writes + pacing with 30ms delay)    
+    const fw = new Uint8Array(firmwareArrayBuffer);
+    const chunk = mtuPayload; // 256; // was 128
+    for (let i = 0; i < fw.length; i += chunk) {
+        await otaCharacteristicFound.writeValue(fw.slice(i, Math.min(i + chunk, fw.length)));
+
+        // 30 milliseconds delay after each chunk to avoid packet loss
+        await new Promise(r => setTimeout(r, 30));
+    }
+
+    // DONE (with response)
+    await otaCharacteristicFound.writeValue(new TextEncoder().encode("DONE"));
+}
+
+// ---------------------------------------------------------------------------------------------------------
+//
+// ---------------------------------------------------------------------------------------------------------
+async function startFirmwareUpdate() {
+    if (!selectedFirmwareFile) {
+        window.alert('Please select a firmware file first');
+        return;
+    }
+    
+    if (!bleServer || !bleServer.connected) {
+        window.alert('Bluetooth is not connected. Connect to device first.');
+        return;
+    }
+
+    if ((outputCharacteristicFound) && (otaCharacteristicFound)) {
+        // disable updates from the ESP32 device
+        let encoder = new TextEncoder('utf-8');
+        await outputCharacteristicFound.writeValue(encoder.encode("disable_updates"))
+        const fwBuf = await selectedFirmwareFile.arrayBuffer();
+        setControlsEnabled(false);        
+        await performOtaTransfer(fwBuf);                
+        await disconnectDevice();
+        // Force reload from server, bypassing cache
+        window.location.reload(true);
+    }
+}
+
+// ---------------------------------------------------------------------------------------------------------
+// Initialize power button style on load
+// ---------------------------------------------------------------------------------------------------------
+window.addEventListener('load', () => {
+    captureDefaultStatusFields();
+    updatePowerButtonStyle();
+    setBrightnessSliderLocked(true);
+    setTimerSlidersLocked(true);
+    initializeSliderPopups();
+    attemptAutoConnectOnLoad();
+});
+
+</script>
+</html>
