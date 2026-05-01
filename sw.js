@@ -1,9 +1,10 @@
-const CACHE_NAME = 'van-lights-v2';
+const CACHE_NAME = 'van-lights-v3';
 const BASE = '/light-controller';
 const urlsToCache = [
   BASE + '/',
   BASE + '/index.html',
-  BASE + '/manifest.json'
+  BASE + '/manifest.json',
+  BASE + '/peace-wagon.svg'
 ];
 
 // Install event
