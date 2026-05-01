@@ -208,16 +208,19 @@
         }
 
         .card-title {
-        .control-select-inline {
-            width: auto;
-            min-width: 5.5rem;
-            padding: 0.45rem 0.6rem;
-            font-size: var(--ui-label-size);
-        }
             font-size: 0.92rem;
             font-weight: 600;
             color: var(--text-primary);
             margin: 0;
+        }
+
+        .control-select-inline {
+            width: 25%;
+            max-width: 25%;
+            min-width: 0;
+            margin-left: auto;
+            padding: 0.45rem 0.5rem;
+            font-size: var(--ui-label-size);
         }
 
         .card-title-spacer {
@@ -988,9 +991,9 @@
                 <div class="control-group">
                     <div class="control-label-row">
                         <label class="control-label">Ignore door open</label>
-                        <select id="door_open_override" class="control-select control-select-inline" onchange="onSelect(this)">
-                            <option value="Off">Off</option>
-                            <option value="On">On</option>
+                        <select id="ignore_door_open" class="control-select control-select-inline" onchange="onSelect(this)">
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
                         </select>
                     </div>
                 </div>
@@ -1221,6 +1224,7 @@ var outputCharacteristicFound;
 var otaCharacteristicFound;
 var otaInProgress = false;
 var readInitialValues = true;
+var manualDisconnectRequested = false;
 var main_switch = false;
 var door_switch = false;
 
@@ -1229,6 +1233,22 @@ const defaultStatusState = {
     value: {}
 };
 let defaultStatusCaptured = false;
+
+function setSliderVisual(slider, active) {
+    if (!slider) {
+        return;
+    }
+
+    const min = Number(slider.min || 0);
+    const max = Number(slider.max || 100);
+    const value = Number(slider.value || 0);
+    const percent = max > min ? ((value - min) / (max - min)) * 100 : 0;
+
+    const isActive = active && !slider.disabled;
+    const fillColor = isActive ? '#3b82f6' : '#64748b';
+    const remainderColor = isActive ? '#1e40af' : '#334155';
+    slider.style.background = `linear-gradient(90deg, ${fillColor} 0%, ${fillColor} ${percent}%, ${remainderColor} ${percent}%, ${remainderColor} 100%)`;
+}
 
 function captureDefaultStatusFields() {
     if (defaultStatusCaptured) {
@@ -1259,7 +1279,7 @@ function captureDefaultStatusFields() {
         'door_open_timer',
         'switch_timer',
         'fade_time',
-        'door_open_override'
+        'ignore_door_open'
     ];
 
     textIds.forEach((id) => {
@@ -1412,7 +1432,7 @@ function connectToDevice() {
     setControlsEnabled(true);
     
     if (connectButton.innerHTML.includes('Disconnect')) {
-        disconnectDevice();
+        disconnectDevice(true);
         console.log("Exitting");
         return true;
     } else {
@@ -1434,8 +1454,9 @@ function connectToDevice() {
 // ---------------------------------------------------------------------------------------------------------
 //
 // ---------------------------------------------------------------------------------------------------------
-function disconnectDevice() {
+function disconnectDevice(userInitiated = false) {
     console.log("Disconnect Device.");
+    manualDisconnectRequested = userInitiated;
     setControlsEnabled(true);
     if (bleServer && bleServer.connected) {
         if (inputCharacteristicFound) {
@@ -1468,11 +1489,18 @@ function disconnectDevice() {
 // ---------------------------------------------------------------------------------------------------------
 function onDisconnected(event) {
     console.log('Device Disconnected:', event.target.device);
+
+    const shouldReload = !manualDisconnectRequested;
+    manualDisconnectRequested = false;
+
     resetStatusFieldsToDefaults();
     updateConnectionStatus(false);
     connectButton.innerHTML = '🔗 Connect Device';
     readInitialValues = true;
-    window.location.reload(true);
+
+    if (shouldReload) {
+        window.location.reload(true);
+    }
 }
 
 // ---------------------------------------------------------------------------------------------------------
@@ -1511,32 +1539,52 @@ function handleCharacteristicChange(event) {
 
     for (var i = 0; i < keys.length; i++) {
         var key = keys[i];
+        var keyElement = document.getElementById(key);
 
         if (key == "led_brigtness") {
-            document.getElementById(key).value = myObj[key];
+            if (keyElement) {
+                keyElement.value = myObj[key];
+                setSliderVisual(keyElement, true);
+            }
             document.getElementById("led_brigtness_str").innerHTML = myObj[key];
         } else if (key == "led_power_en") {
-            document.getElementById(key).value = myObj[key];
+            if (keyElement) {
+                keyElement.value = myObj[key];
+            }
             updatePowerButtonStyle();
         } else if (key == "door_open_timer") {
-            document.getElementById(key).value = myObj[key];
+            if (keyElement) {
+                keyElement.value = myObj[key];
+                setSliderVisual(keyElement, true);
+            }
             document.getElementById("door_open_timer_str").innerHTML = myObj[key];
         } else if (key == "switch_timer") {
-            document.getElementById(key).value = myObj[key];
+            if (keyElement) {
+                keyElement.value = myObj[key];
+                setSliderVisual(keyElement, true);
+            }
             document.getElementById("switch_timer_str").innerHTML = myObj[key];
         } else if (key == "fade_time") {
-            document.getElementById(key).value = myObj[key];
+            if (keyElement) {
+                keyElement.value = myObj[key];
+                setSliderVisual(keyElement, true);
+            }
             document.getElementById("fade_time_str").innerHTML = myObj[key];
-        } else if (key == "door_open_override") {
-            document.getElementById(key).value = myObj[key];
+        } else if (key == "ignore_door_open") {
+            if (keyElement) {
+                const ignoreDoorValue = myObj[key];
+                keyElement.value = ignoreDoorValue;
+            }
         } else if (key == "switch_state") {
             main_switch = (myObj[key] == "On") ? true : false;
             setSwitchState();
         } else if (key == "door_switch_state") {
             door_switch = (myObj[key] == "On") ? true : false;
             setSwitchState();
+        } else if (keyElement) {
+            keyElement.innerHTML = myObj[key];
         } else {
-            document.getElementById(key).innerHTML = myObj[key];
+            console.warn("Unhandled BLE key with no matching element:", key, myObj[key]);
         }
     }
 
@@ -1734,6 +1782,7 @@ function onSlider(element) {
             let encoder = new TextEncoder('utf-8');
             var outputValue = "";
             var sliderValue = document.getElementById(element.id).value;
+            setSliderVisual(element, true);
             if (element.id == "led_brigtness") {
                 document.getElementById("led_brigtness_str").innerHTML = sliderValue;
                 outputValue = "led_brigtness:"+sliderValue.toString();
@@ -1932,7 +1981,7 @@ function setControlsEnabled(enabled) {
     document.getElementById('modeFirmware').disabled = !enabled;
     document.getElementById('modeFilesystem').disabled = !enabled;
     document.getElementById("led_power_en").disabled = !enabled;
-    document.getElementById("door_open_override").disabled = !enabled;
+    document.getElementById("ignore_door_open").disabled = !enabled;
 
     if (enabled) {
         setBrightnessSliderLocked(brightnessLocked);
@@ -2074,6 +2123,12 @@ window.addEventListener('load', () => {
     updatePowerButtonStyle();
     setBrightnessSliderLocked(true);
     setTimerSlidersLocked(true);
+    ['led_brigtness', 'door_open_timer', 'switch_timer', 'fade_time'].forEach((id) => {
+        const slider = document.getElementById(id);
+        if (slider) {
+            setSliderVisual(slider, !slider.disabled);
+        }
+    });
     initializeSliderPopups();
     attemptAutoConnectOnLoad();
 });
